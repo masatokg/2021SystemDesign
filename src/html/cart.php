@@ -2,6 +2,65 @@
 	require_once("include/database.php");
 	session_start( );
 
+	/**
+	 * d_purchase テーブルに挿入する関数
+	 */
+	function create_purchase( $mdb2, $customer_code, $total_price )
+	{
+		// d_purchase テーブルへの挿入
+		$sql = " insert into d_purchase( customer_code, purchase_date, total_price) ";
+		$sql.= " values( ?, now(), ? ) ";
+		$stmt = $mdb2->prepare( $sql );
+		// エラー処理
+		if ( PEAR::isError( $stmt ) )
+		{
+			$mdb2->rollback();
+			die("エラーが発生しました。管理者までお問い合わせ下さい。");
+		}
+		$res = $stmt->execute(
+			array(
+				$customer_code,
+				$total_price
+			)
+		);
+		// エラー処理
+		if ( PEAR::isError( $res ) )
+		{
+			$mdb2->rollback();
+			die("エラーが発生しました。管理者までお問い合わせ下さい。");
+		}
+	}
+
+	/**
+	 * d_purchase_detail テーブルに挿入する関数
+	 */
+	function create_purchase_detail( $mdb2, $order_id, $item_code, $price, $num )
+	{
+		$sql = " insert into d_purchase_detail( order_id, item_code, price, num ) ";
+		$sql.= " values( ?, ?, ?, ? ) " ;
+		$stmt = $mdb2->prepare( $sql );
+		// エラー処理
+		if ( PEAR::isError( $stmt ) )
+		{
+			$mdb2->rollback();
+			die("エラーが発生しました。管理者までお問い合わせ下さい。");
+		}
+		$res = $stmt->execute(
+			array(
+				$order_id,
+				$item_code,
+				$price,
+				$num
+			)
+		);
+		// エラー処理
+		if ( PEAR::isError( $res ) )
+		{
+			$mdb2->rollback();
+			die("エラーが発生しました。管理者までお問い合わせ下さい。");
+		}
+	}
+
 	//isset 命令はある変数が存在するかどうかを判定するために用いる。
 	// if 文の中に !isset と記述する事で、変数が存在しない場合に if 文に入る。
 	if( !isset( $_SESSION["cart"] ) )
@@ -78,22 +137,16 @@
 	 ------------------------------------------------------------*/
 	if( $_REQUEST["cmd"] == "commit_order" )
 	{
+		// トランザクション開始
+		$mdb2->beginTransaction();
+
 		// カート内の合計金額を計算する。
 		foreach( $_SESSION["cart"] as $cart )
 		{
 			$total_price += $cart["price"] * $cart["num"];
 		}
-
 		// d_purchase テーブルへの挿入
-		$sql = " insert into d_purchase( customer_code, purchase_date, total_price) ";
-		$sql.= " values( ?, now(), ? ) ";
-		$stmt = $mdb2->prepare( $sql );
-		$res = $stmt->execute(
-			array(
-				$_SESSION["customer_code"],
-				$total_price
-			)
-		);
+		create_purchase( $mdb2, $_SESSION["customer_code"], $total_price );
 
 		// d_purchase テーブルに挿入した ID を取得。
 		$order_id = $mdb2->lastinsertid("d_purchase","order_id");
@@ -102,22 +155,16 @@
 		// から d_purchse_detail に insert する。
 		foreach( $_SESSION["cart"] as $cart )
 		{
-			$sql = " insert into d_purchase_detail( order_id, item_code, price, num ) ";
-			$sql.= " values( ?, ?, ?, ? ) " ;
-			$stmt = $mdb2->prepare( $sql );
-			$res = $stmt->execute( 
-				array(
-					$order_id,
-					$cart["item_code"],
-					$cart["price"],
-					$cart["num"]
-				)
-			);
+			create_purchase_detail( 
+				$mdb2, $order_id, $cart["item_code"], $cart["price"], $cart["num"] );
 		}
 		unset( $_SESSION["cart"] );
 		// $is_order_done 変数は、画面上に「注文が完了しました」
 		// メッセージを表示するために使用する。
 		$is_order_done = 1;
+
+		// トランザクションのコミット
+		$mdb2->commit();
 	}
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
