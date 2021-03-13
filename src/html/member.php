@@ -1,3 +1,83 @@
+<?php
+	session_start();
+
+	// database.php の読み込み
+	require_once("include/database.php");
+
+	/**-----------------------------------------------------------
+	 *
+	 * 会員登録画面で「更新」ボタンがクリックされた時の処理。
+	 * ログイン状態に応じて、UPDATE または INSERT を実行する。
+	 *
+	 ------------------------------------------------------------*/
+	if( $_REQUEST["cmd"] == "regist_member" )
+	{
+		if( $_SESSION["customer_code"] != "" )
+		{
+			$sql  = " UPDATE m_customers SET ";
+			$sql .= " customer_code = ?,";
+			$sql .= " pass = ?,";
+			$sql .= " name = ?,";
+			$sql .= " address = ?,";
+			$sql .= " tel = ?,";
+			$sql .= " mail = ?";
+			$sql .= " WHERE customer_code = ? ";
+
+			$stmt = $mdb2->prepare( $sql );
+			$stmt->execute( 
+				array(
+					$_REQUEST["customer_code"],
+					$_REQUEST["pass"],
+					$_REQUEST["name"],
+					$_REQUEST["address"],
+					$_REQUEST["tel"],
+					$_REQUEST["mail"],
+					$_SESSION["customer_code"]
+				)
+			);
+			$is_success = 1;
+		}
+		else
+		{
+			$sql = "INSERT INTO m_customers( customer_code, pass, name, address, tel, mail, del_flag, reg_date ) ";
+			$sql .= "VALUES( ";
+			$sql .= " ?, ";
+			$sql .= " ?, ";
+			$sql .= " ?, ";
+			$sql .= " ?, ";
+			$sql .= " ?, ";
+			$sql .= " ?, ";
+			$sql .= " '0', ";
+			$sql .= " now() ) ";
+			$stmt = $mdb2->prepare( $sql );
+			$stmt->execute( 
+				array(
+					$_REQUEST["customer_code"],
+					$_REQUEST["pass"],
+					$_REQUEST["name"],
+					$_REQUEST["address"],
+					$_REQUEST["tel"],
+					$_REQUEST["mail"],
+				)
+			);
+			$is_success = 1;
+		}
+	}
+
+	// ログイン済であれば、お客様の情報をデータベースより取得。
+	if( $_SESSION["customer_code"] != "" )
+	{
+		$sql = " SELECT * FROM m_customers ";
+		$sql.= " WHERE customer_code= ? ";
+
+		$stmt = $mdb2->prepare( $sql );
+		$res = $stmt->execute( array( $_SESSION["customer_code"] ) );
+
+		$count = 0;
+		$info = $res->fetchRow( MDB2_FETCHMODE_ASSOC );
+	}
+
+?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,20 +98,37 @@
           <!-- メイン部分 各ページごとに作成-->
           <div id="mainbox" class="clearfix">
             <h2>登録情報</h2>
+
+<?php
+	if( $is_success == 1 )
+	{
+?>
+			<br><p align="center">正常に処理が完了しました。</p>
+<?php
+	}
+?>
+
+            <form name="member_form" action="member.php" method="post">
+            <input type="hidden" name="cmd" value="regist_member"/>
             <div class="info clearfix">
             <dl>
+            <dt>ID：</dt>
+            <dd><input type="text" name="customer_code" <?php if( $info["customer_code"] != "" ){ print( "readonly" ); } ?> value="<?php print( htmlspecialchars( $info["customer_code"], ENT_QUOTES ) ); ?>"/></dd>
+            <dt>パスワード：</dt>
+            <dd><input type="password" name="pass" value="<?php print( htmlspecialchars( $info["pass"] , ENT_QUOTES) ); ?>"/></dd>
             <dt>氏名：</dt>
-            <dd><input type="text" name="" value="大家正登"/></dd>
+            <dd><input type="text" name="name" value="<?php print( htmlspecialchars( $info["name"], ENT_QUOTES ) ); ?>"/></dd>
             <dt>住所：</dt>
-            <dd><input type="text" name="" value="東京都"/></dd>
+            <dd><input type="text" name="address" value="<?php print( htmlspecialchars( $info["address"], ENT_QUOTES ) ); ?>"/></dd>
             <dt>電話：</dt>
-            <dd><input type="text" name="" value="111-222-333"/></dd>
+            <dd><input type="text" name="tel" value="<?php print( htmlspecialchars( $info["tel"], ENT_QUOTES ) ); ?>"/></dd>
             <dt>アドレス：</dt>
-            <dd><input type="text" value="ooie@example.com" size="30"/>
+            <dd><input type="text" name="mail" value="<?php print( htmlspecialchars(  $info["mail"], ENT_QUOTES ) ); ?>" size="30"/>
             </dd>
             </dl>
-            <input type="submit" class ="update" value="更新"/>
+            <input type="submit" class="update" value="登録"/>
             </div>
+            </form>
           </div>
           <!-- /メイン部分 各ページごとに作成-->
 
@@ -45,83 +142,10 @@
         <!-- /メイン部分 -->
       </div>
     </div>
-    <!-- 右コンテンツ -->
-    <!-- 左メニュー -->
-    <div id="leftbox">
-      <h1><img src="common/img/title.gif" alt="oh yeah!!" /></h1>
-      <div id="menu">
-        <!-- ログインフォーム（非ログイン時） -->
-        <div class="box">
-          <div class="top"><img src="common/img/t1.gif" alt="ログイン" /></div>
-          <dl class="clearfix">
-            <dt><img src="common/img/t4.gif" alt="ID" /></dt>
-            <dd>
-              <input name="id2" type="text" class="text" />
-            </dd>
-            <dt><img src="common/img/t5.gif" alt="PASS" /></dt>
-            <dd>
-              <input name="id" type="password" class="text" />
-            </dd>
-          </dl>
-          <div class="bottom">
-            <input name="id3" type="submit" value="ログイン" />
-            <!--
-        <input name="id3" type="image" class="bt" value="ログイン" src="common/img/bt_login.gif" alt="ログイン" />
--->
-          </div>
-        </div>
-        <!-- /ログインフォーム -->
-        <!-- ウェルカム（ログイン時） -->
-        <!--
-        <div class="box">
-          <div class="top">ようこそ<span class="person">大家</span>さん！</div>
-          <div class="bottom">
-            <input name="id3" type="submit" value="ログアウト" />
-            <!-- 
-            <input name="id3" type="image" class="bt" src="common/img/bt_logout.gif" alt="ログアウト" />
-          </div>
-        </div>
--->
-        <!-- /ウェルカム -->
-        <!-- 商品検索 -->
-        <div class="box" id="search">
-          <div class="top"><img src="common/img/t2.gif" alt="商品検索" /></div>
-          <dl class="clearfix">
-            <dt><img src="common/img/t6.gif" alt="商品名" width="32" height="18" /></dt>
-            <dd>
-              <input type="text" name="item_name" class="text" value=""/>
-            </dd>
-          </dl>
-          <dl class="clearfix cat">
-            <dt><img src="common/img/t7.gif" alt="カテゴリ" /></dt>
-            <dd>
-              <input type="checkbox" name="cat_kan" value="1"/>
-              管楽器<br />
-              <input type="checkbox" name="cat_gen2" value="1"/>
-              弦楽器<br />
-              <input type="checkbox" name="cat_da" value="1"/>
-              打楽器 </dd>
-          </dl>
-          <div class="bottom">
-            <input name="id3" type="submit" value="検索" />
-          </div>
-        </div>
-        <!-- 商品検索 -->
-        <!-- 共通メニュー -->
-        <ul class="menu">
-          <li><a href="item_list.php"><img src="common/img/bt1.gif" alt="商品一覧" name="Image1" width="172" height="38" id="Image1" onmouseover="MM_swapImage('Image1','','common/img/bt1_f2.gif',1)" onmouseout="MM_swapImgRestore()" /></a></li>
-          <li><a href="cart.php"><img src="common/img/bt2.gif" alt="カートの中" name="Image2" width="172" height="38" id="Image2" onmouseover="MM_swapImage('Image2','','common/img/bt2_f2.gif',1)" onmouseout="MM_swapImgRestore()" /></a></li>
-          <!-- ログイン時 -->
-          <!--
-          <li><a href="member.php"><img src="common/img/bt3.gif" alt="会員情報" name="Image3" width="172" height="38" id="Image3" onmouseover="MM_swapImage('Image3','','common/img/bt3_f2.gif',1)" onmouseout="MM_swapImgRestore()" /></a></li>
--->
-          <!-- 非ログイン時 -->
-          <li><a href="member.php"><img src="common/img/bt3_2.gif" alt="会員情報" name="Image4" width="172" height="38" id="Image4" onmouseover="MM_swapImage('Image4','','common/img/bt3_2_f2.gif',1)" onmouseout="MM_swapImgRestore()" /></a></li>
-        </ul>
-        <!-- /共通メニュー -->
-      </div>
-    </div>
-    <!-- /左メニュー -->
+<?php
+	// left_pane.php の読み込み
+	require_once("include/left_pane.php");
+?>
   </div>
 </div>
 </body>

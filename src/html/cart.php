@@ -1,3 +1,125 @@
+<?php
+	require_once("include/database.php");
+	session_start( );
+
+	//isset 命令はある変数が存在するかどうかを判定するために用いる。
+	// if 文の中に !isset と記述する事で、変数が存在しない場合に if 文に入る。
+	if( !isset( $_SESSION["cart"] ) )
+	{
+		// array() 命令で、空の配列を作成する。
+		$_SESSION["cart"] = array();
+	}
+
+	/**-----------------------------------------------------------
+	 *
+	 * リクエスト cmd の中身が、「add_cart」であった場合の処理。
+	 * 詳細画面で「カートにいれる」ボタンが押された時に処理を行う。
+	 *
+	 ------------------------------------------------------------*/
+	if( $_REQUEST["cmd"] == "add_cart")
+	{
+		$is_already_exists  = 0;
+		for( $i = 0 ; $i < count( $_SESSION["cart"] ); $i++ )
+		{
+			if( $_SESSION["cart"][$i]["item_code"] == $_REQUEST["code"] )
+			{
+				// 追加する商品がカートに既に存在するならば、数量を合算。
+				$_SESSION["cart"][$i]["num"] = $_SESSION["cart"][$i]["num"] + $_REQUEST["num"];
+				$is_already_exists = 1;
+			}
+		}
+		// 追加する商品がカートに存在しない場合、カートに新規登録。
+		if( $is_already_exists == 0 )
+		{
+			$sql = "select * from m_items where item_code = ? ";
+			$stmt = $mdb2->prepare( $sql );
+			$res = $stmt->execute(
+				array( $_REQUEST["code"] )
+			);
+			if( $record = $res->fetchRow( MDB2_FETCHMODE_ASSOC ) ) 
+			{
+				$item["item_code"] = $_REQUEST["code"];
+				$item["num"] = $_REQUEST["num"];
+				$item["image"] = $record["image"];
+				$item["item_name"] = $record["item_name"];
+				$item["price"] = $record["price"];
+				array_push( $_SESSION["cart"], $item );
+			}
+			$res->free();
+		}
+	}
+
+	/**-----------------------------------------------------------
+	 *
+	 * リクエスト cmd の中身が、「del」であった場合の処理。
+	 * カート画面で「削除」ボタンが押された時に処理を行う。
+	 *
+	 ------------------------------------------------------------*/
+	if( $_REQUEST["cmd"] == "del")
+	{
+		for( $i = 0 ; $i < count( $_SESSION["cart"] ); $i++ )
+		{
+			if( $_SESSION["cart"][$i]["item_code"] == $_REQUEST["code"] )
+			{
+				// unset 命令は、変数を破棄する。
+				unset( $_SESSION["cart"][$i] );
+			}
+		}
+		// 削除すると配列の番号が歯抜けになるため、以下の処理で配列の番号を整理し直す。
+		$_SESSION["cart"] = array_merge($_SESSION["cart"]);
+	}
+
+	/**-----------------------------------------------------------
+	 *
+	 * リクエスト cmd の中身が、「commit_order」であった場合の処理。
+	 * カート画面で「注文確定」ボタンが押された時に処理を行う。
+	 * 注文確定ボタンはログイン済の時のみ、表示される。
+	 *
+	 ------------------------------------------------------------*/
+	if( $_REQUEST["cmd"] == "commit_order" )
+	{
+		// カート内の合計金額を計算する。
+		foreach( $_SESSION["cart"] as $cart )
+		{
+			$total_price += $cart["price"] * $cart["num"];
+		}
+
+		// d_purchase テーブルへの挿入
+		$sql = " insert into d_purchase( customer_code, purchase_date, total_price) ";
+		$sql.= " values( ?, now(), ? ) ";
+		$stmt = $mdb2->prepare( $sql );
+		$res = $stmt->execute(
+			array(
+				$_SESSION["customer_code"],
+				$total_price
+			)
+		);
+
+		// d_purchase テーブルに挿入した ID を取得。
+		$order_id = $mdb2->lastinsertid("d_purchase","order_id");
+
+		// $_SESSION["cart"] をもう一度ループし、ループ内で詳細情報を取得して
+		// から d_purchse_detail に insert する。
+		foreach( $_SESSION["cart"] as $cart )
+		{
+			$sql = " insert into d_purchase_detail( order_id, item_code, price, num ) ";
+			$sql.= " values( ?, ?, ?, ? ) " ;
+			$stmt = $mdb2->prepare( $sql );
+			$res = $stmt->execute( 
+				array(
+					$order_id,
+					$cart["item_code"],
+					$cart["price"],
+					$cart["num"]
+				)
+			);
+		}
+		unset( $_SESSION["cart"] );
+		// $is_order_done 変数は、画面上に「注文が完了しました」
+		// メッセージを表示するために使用する。
+		$is_order_done = 1;
+	}
+?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -18,32 +140,49 @@
           <!-- メイン部分 各ページごとに作成-->
           <div id="mainbox" class="clearfix">
             <h2>カートの中</h2>
+<?php
+	if( $is_order_done == 1 )
+	{
+?>
+            <br>
+　　注文が完了しました。<a href="item_list.php">商品一覧へ戻る</a>
+            <br>
+<?php
+	}
+?>
             <div class="list clearfix">
               <table class="cartlist" cellpadding="0" cellspacing="0">
-                <tr class="ln1">
-                  <td class="tc1"><img src="img/thumb2/EG024.jpg"></td>
-                  <td class="tc2">YAMAHAトランペット</td>
-                  <td class="tc3">&yen;200,000</td>
-                  <td class="tc4"><a href="item_detail.php">詳細へ</a></td>
-                  <td class="tc5"><a href="#">削除</a></td>
+<?php
+	// $_SESSION["cart"] をループし、カートの商品を表示する。
+	if( isset ( $_SESSION["cart"] ) )
+	{
+		foreach( $_SESSION["cart"] as $cart )
+		{
+?>
+                <tr>
+                  <td class="tc1"><img src="img/thumb2/<?php print( $cart["image"] ); ?>"></td>
+                  <td class="tc2"><?php print( $cart["item_name"] ); ?>(<?php print( $cart["num"] ); ?>個)</td>
+                  <td class="tc3">&yen;<?php print( $cart["price"] ); ?></td>
+                  <td class="tc4"><a href="item_detail.php?code=<?php print( $cart["item_code"] ); ?>">詳細へ</a></td>
+                  <td class="tc5"><a href="cart.php?cmd=del&code=<?php print( $cart["item_code"] ); ?>">削除</a></td>
                 </tr>
-                <tr class="ln2">
-                  <td class="tc1"><img src="img/thumb2/EG007.jpg"></td>
-                  <td class="tc2">オリエンテ製コントラバス</td>
-                  <td class="tc3">&yen;300,000</td>
-                  <td class="tc4"><a href="item_detail.php">詳細へ</a></td>
-                  <td class="tc5"><a href="#">削除</a></td>
-                </tr>
-                <tr class="ln1">
-                  <td class="tc1"><img src="img/thumb2/EG048.jpg"></td>
-                  <td class="tc2">TAMAドラムセット</td>
-                  <td class="tc3">&yen;100,000</td>
-                  <td class="tc4"><a href="item_detail.php">詳細へ</a></td>
-                  <td class="tc5"><a href="#">削除</a></td>
-                </tr>
+<?php
+		}
+	}
+?>
               </table>
               <br>
+<?php
+	if( $_SESSION["customer_code"] != "" && count( $_SESSION["cart"] ) > 0 )
+	{
+?>
+              <form name="cart_form" action="cart.php" method="post">
+              <input type="hidden" name="cmd" value="commit_order"/>
               <input type="submit" class="fix" value="注文確定"/>
+              </form>
+<?php
+	}
+?>
             </div>
           </div>
           <!-- /メイン部分 各ページごとに作成-->
@@ -59,82 +198,9 @@
       </div>
     </div>
     <!-- 右コンテンツ -->
-    <!-- 左メニュー -->
-    <div id="leftbox">
-      <h1><img src="common/img/title.gif" alt="oh yeah!!" /></h1>
-      <div id="menu">
-        <!-- ログインフォーム（非ログイン時） -->
-        <div class="box">
-          <div class="top"><img src="common/img/t1.gif" alt="ログイン" /></div>
-          <dl class="clearfix">
-            <dt><img src="common/img/t4.gif" alt="ID" /></dt>
-            <dd>
-              <input name="id2" type="text" class="text" />
-            </dd>
-            <dt><img src="common/img/t5.gif" alt="PASS" /></dt>
-            <dd>
-              <input name="id" type="password" class="text" />
-            </dd>
-          </dl>
-          <div class="bottom">
-            <input name="id3" type="submit" value="ログイン" />
-            <!--
-        <input name="id3" type="image" class="bt" value="ログイン" src="common/img/bt_login.gif" alt="ログイン" />
--->
-          </div>
-        </div>
-        <!-- /ログインフォーム -->
-        <!-- ウェルカム（ログイン時） -->
-        <!--
-        <div class="box">
-          <div class="top">ようこそ<span class="person">大家</span>さん！</div>
-          <div class="bottom">
-            <input name="id3" type="submit" value="ログアウト" />
-            <!-- 
-            <input name="id3" type="image" class="bt" src="common/img/bt_logout.gif" alt="ログアウト" />
-          </div>
-        </div>
--->
-        <!-- /ウェルカム -->
-        <!-- 商品検索 -->
-        <div class="box" id="search">
-          <div class="top"><img src="common/img/t2.gif" alt="商品検索" /></div>
-          <dl class="clearfix">
-            <dt><img src="common/img/t6.gif" alt="商品名" width="32" height="18" /></dt>
-            <dd>
-              <input type="text" name="item_name" class="text" value=""/>
-            </dd>
-          </dl>
-          <dl class="clearfix cat">
-            <dt><img src="common/img/t7.gif" alt="カテゴリ" /></dt>
-            <dd>
-              <input type="checkbox" name="cat_kan" value="1"/>
-              管楽器<br />
-              <input type="checkbox" name="cat_gen2" value="1"/>
-              弦楽器<br />
-              <input type="checkbox" name="cat_da" value="1"/>
-              打楽器 </dd>
-          </dl>
-          <div class="bottom">
-            <input name="id3" type="submit" value="検索" />
-          </div>
-        </div>
-        <!-- 商品検索 -->
-        <!-- 共通メニュー -->
-        <ul class="menu">
-          <li><a href="item_list.php"><img src="common/img/bt1.gif" alt="商品一覧" name="Image1" width="172" height="38" id="Image1" onmouseover="MM_swapImage('Image1','','common/img/bt1_f2.gif',1)" onmouseout="MM_swapImgRestore()" /></a></li>
-          <li><a href="cart.php"><img src="common/img/bt2.gif" alt="カートの中" name="Image2" width="172" height="38" id="Image2" onmouseover="MM_swapImage('Image2','','common/img/bt2_f2.gif',1)" onmouseout="MM_swapImgRestore()" /></a></li>
-          <!-- ログイン時 -->
-          <!--
-          <li><a href="member.php"><img src="common/img/bt3.gif" alt="会員情報" name="Image3" width="172" height="38" id="Image3" onmouseover="MM_swapImage('Image3','','common/img/bt3_f2.gif',1)" onmouseout="MM_swapImgRestore()" /></a></li>
--->
-          <!-- 非ログイン時 -->
-          <li><a href="member.php"><img src="common/img/bt3_2.gif" alt="会員情報" name="Image4" width="172" height="38" id="Image4" onmouseover="MM_swapImage('Image4','','common/img/bt3_2_f2.gif',1)" onmouseout="MM_swapImgRestore()" /></a></li>
-        </ul>
-        <!-- /共通メニュー -->
-      </div>
-    </div>
-    <!-- /左メニュー -->
+<?php
+	require_once("include/left_pane.php");
+?>
   </div>
 </div>
 </body>
