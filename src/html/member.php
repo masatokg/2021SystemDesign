@@ -4,6 +4,7 @@
 	// database.php の読み込み
 	require_once("include/database.php");
 	global $info;
+	$is_emptyentry = false;
 
 	/**-----------------------------------------------------------
 	 *
@@ -11,9 +12,22 @@
 	 * ログイン状態に応じて、UPDATE または INSERT を実行する。
 	 *
 	 ------------------------------------------------------------*/
-	if( isset($_REQUEST["cmd"]) && $_REQUEST["cmd"]) == "regist_member" )
+	if( ( isset($_REQUEST["cmd"]) && ($_REQUEST["cmd"] == "regist_member" ) ) && 
+		( (isset($_REQUEST["customer_code"]) && isset($_REQUEST["pass"]) 
+		&& isset($_REQUEST["name"]) && isset($_REQUEST["address"]) 
+		&& isset($_REQUEST["tel"]) && isset($_REQUEST["mail"]) ) )
+	)
 	{
-		if( $_SESSION['customer_code'] != "" )
+		if( (empty($_REQUEST["customer_code"]) || empty($_REQUEST["pass"]) 
+				|| empty($_REQUEST["name"]) || empty($_REQUEST["address"]) 
+				|| empty($_REQUEST["tel"]) || empty($_REQUEST["mail"]) ) 
+			
+			)
+				
+		{
+			$is_emptyentry = true;
+		}
+		elseif( isset($_SESSION['customer_code']) && $_SESSION['customer_code'] != "" )
 		{
 			// $sql  = " UPDATE m_customers SET ";
 			// $sql .= " customer_code = ?,";
@@ -92,8 +106,9 @@
 		}
 	}
 
+
 	// ログイン済であれば、お客様の情報をデータベースより取得。
-	if( isset($_SESSION["customer_code"]) && $_SESSION["customer_code"]!="") )
+	if( isset($_SESSION["customer_code"]) && $_SESSION["customer_code"]!="" )
 	{
 		$sql = " SELECT * FROM m_customers ";
 		// $sql.= " WHERE customer_code= ? ";
@@ -155,6 +170,19 @@
             </div>
             </form>
           </div>
+<?php 
+	if($is_emptyentry){
+?>		
+			<h1><B><font color='red'><center>登録情報は全て必須です</center></font></B></h1>		
+<?php 
+	}else{
+?>
+			<h1><B><font color='blue'><center>登録情報は全て必須です</center></font></B></h1>		
+<?php 
+		}
+?>
+
+
           <!-- /メイン部分 各ページごとに作成-->
 
           <!-- ↓↓共通部分↓↓ -->
