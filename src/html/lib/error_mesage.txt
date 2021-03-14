@@ -1,0 +1,173 @@
+[watson.jp-aso-kuga@users807 lib]$ php go-pear.php
+Sorry!  Your PHP version is too new (5.5.35) for this go-pear.
+Instead use http://pear.php.net/go-pear.phar for a more stable and current
+version of go-pear, more suited to your PHP version.
+
+Thank you for your coopertion and sorry for the inconvenience!
+[watson.jp-aso-kuga@users807 lib]$
+
+
+
+wget https://pear.php.net/go-pear.phar
+
+
+
+https://pear.php.net/go-pear.phar
+
+
+
+[watson.jp-aso-kuga@users807 lib]$ php go-pear.phar
+
+Below is a suggested file layout for your new PEAR installation.  To
+change individual locations, type the number in front of the
+directory.  Type 'all' to change all of them or simply press Enter to
+accept these locations.
+
+ 1. Installation base ($prefix)                   : /home/users/0/watson.jp-aso-kuga/pear
+ 2. Temporary directory for processing            : /tmp/pear/install
+ 3. Temporary directory for downloads             : /tmp/pear/install
+ 4. Binaries directory                            : /home/users/0/watson.jp-aso-kuga/pear/bin
+ 5. PHP code directory ($php_dir)                 : /home/users/0/watson.jp-aso-kuga/pear/share/pear
+ 6. Documentation directory                       : /home/users/0/watson.jp-aso-kuga/pear/docs
+ 7. Data directory                                : /home/users/0/watson.jp-aso-kuga/pear/data
+ 8. User-modifiable configuration files directory : /home/users/0/watson.jp-aso-kuga/pear/cfg
+ 9. Public Web Files directory                    : /home/users/0/watson.jp-aso-kuga/pear/www
+10. System manual pages directory                 : /home/users/0/watson.jp-aso-kuga/pear/man
+11. Tests directory                               : /home/users/0/watson.jp-aso-kuga/pear/tests
+12. Name of configuration file                    : /home/users/0/watson.jp-aso-kuga/.pearrc
+
+1-12, 'all' or Enter to continue: all
+
+
+
+include_path=".:/home/users/0/watson.jp-aso-kuga/pear/share/pear"
+
+
+PEAR: Optional feature webinstaller available (PEAR's web-based installer)
+PEAR: Optional feature gtkinstaller available (PEAR's PHP-GTK-based installer)
+PEAR: Optional feature gtk2installer available (PEAR's PHP-GTK2-based installer)
+PEAR: To install optional features use "pear install pear/PEAR#featurename"
+
+******************************************************************************
+WARNING!  The include_path defined in the currently used php.ini does not
+contain the PEAR PHP directory you just specified:
+</home/users/0/watson.jp-aso-kuga/pear/share/pear>
+If the specified directory is also not in the include_path used by
+your scripts, you will have problems getting any PEAR packages working.
+
+
+Would you like to alter php.ini </usr/local/php/5.5/etc/php.ini>? [Y/n] : Y
+
+******************************************************************************
+WARNING: Cannot write to /usr/local/php/5.5/etc/php.ini, but php.ini was successfully created
+at </home/users/0/watson.jp-aso-kuga/pear/php.ini-gopear>. Please replace the file </usr/local/php/5.5/etc/php.ini> with
+</home/users/0/watson.jp-aso-kuga/pear/php.ini-gopear> or modify your php.ini by adding:
+
+include_path=".:/home/users/0/watson.jp-aso-kuga/pear/share/pear"
+
+
+Current include path           : .:/usr/local/php/5.5/lib/php
+Configured directory           : /home/users/0/watson.jp-aso-kuga/pear/share/pear
+Currently used php.ini (guess) : /usr/local/php/5.5/etc/php.ini
+Press Enter to continue:
+
+
+
+
+
+<?php 
+  // Cache_Liteインクルード
+  ini_set('include_path', '.:/home/users/0/watson.jp-aso-kuga/pear/share/pear/PEAR');
+  // クラス読み込み
+  require_once('Cache/Lite.php');
+?>
+
+
+/home/users/0/watson.jp-aso-kuga/pear/share/pear/ install MDB2
+
+
+/home/users/0/watson.jp-aso-kuga/web/lib
+
+
+
+******************************************************************************
+WARNING!  The include_path defined in the currently used php.ini does not
+contain the PEAR PHP directory you just specified:
+</home/users/0/watson.jp-aso-kuga/web/lib/share/pear>
+If the specified directory is also not in the include_path used by
+your scripts, you will have problems getting any PEAR packages working.
+
+
+Would you like to alter php.ini </usr/local/php/5.5/etc/php.ini>? [Y/n] : n
+
+I will add a workaround for this in the 'pear' command to make sure
+the installer works, but please look over your php.ini or Apache
+configuration to make sure /home/users/0/watson.jp-aso-kuga/web/lib/share/pear is in your include_path.
+
+Current include path           : .:/usr/local/php/5.5/lib/php
+Configured directory           : /home/users/0/watson.jp-aso-kuga/web/lib/share/pear
+Currently used php.ini (guess) : /usr/local/php/5.5/etc/php.ini
+Press Enter to continue:
+
+** WARNING! Old version found at /home/users/0/watson.jp-aso-kuga/web/lib/bin, please remove it or be sure to use the new /home/users/0/watson.jp-aso-kuga/web/lib/bin/pear command
+
+The 'pear' command is now at your service at /home/users/0/watson.jp-aso-kuga/web/lib/bin/pear
+
+** The 'pear' command is not currently in your PATH, so you need to
+** use '/home/users/0/watson.jp-aso-kuga/web/lib/bin/pear' until you have added
+** '/home/users/0/watson.jp-aso-kuga/web/lib/bin' to your PATH environment variable.
+
+Run it without parameters to see the available actions, try 'pear list'
+to see what packages are installed, or 'pear help' for help.
+
+For more information about PEAR, see:
+
+  http://pear.php.net/faq.php
+  http://pear.php.net/manual/
+
+Thanks for using go-pear!
+
+[watson.jp-aso-kuga@users807 lib]$
+[watson.jp-aso-kuga@users807 lib]$
+[watson.jp-aso-kuga@users807 lib]$ pear
+-bash: pear: command not found
+[watson.jp-aso-kuga@users807 lib]$
+
+
+https://pear.php.net/package/MDB2
+
+pear install MDB2
+/home/users/0/watson.jp-aso-kuga/web/lib/bin/pear install MDB2
+
+[watson.jp-aso-kuga@users807 lib]$
+[watson.jp-aso-kuga@users807 lib]$ /home/users/0/watson.jp-aso-kuga/web/lib/bin/pear install MDB2
+WARNING: channel "pear.php.net" has updated its protocols, use "pear channel-update pear.php.net" to update
+downloading MDB2-2.4.1.tgz ...
+Starting to download MDB2-2.4.1.tgz (121,557 bytes)
+..........................done: 121,557 bytes
+install ok: channel://pear.php.net/MDB2-2.4.1
+MDB2: Optional feature fbsql available (Frontbase SQL driver for MDB2)
+MDB2: Optional feature ibase available (Interbase/Firebird driver for MDB2)
+MDB2: Optional feature mysql available (MySQL driver for MDB2)
+MDB2: Optional feature mysqli available (MySQLi driver for MDB2)
+MDB2: Optional feature mssql available (MS SQL Server driver for MDB2)
+MDB2: Optional feature oci8 available (Oracle driver for MDB2)
+MDB2: Optional feature pgsql available (PostgreSQL driver for MDB2)
+MDB2: Optional feature querysim available (Querysim driver for MDB2)
+MDB2: Optional feature sqlite available (SQLite2 driver for MDB2)
+MDB2: To install optional features use "pear install pear/MDB2#featurename"
+[watson.jp-aso-kuga@users807 lib]$
+
+
+pearのパス
+/home/users/0/watson.jp-aso-kuga/web/lib/share/pear
+
+
+// 接続の失敗
+
+$mdb2 = MDB2::connect( $dsn, $options );
+
+https://pear.plus-server.net/package.database.mdb2.faq.html
+https://pear.php.net/package/MDB2_Driver_mysql
+/home/users/0/watson.jp-aso-kuga/web/lib/bin/pear install MDB2_Driver_mysql
+

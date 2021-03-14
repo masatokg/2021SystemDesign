@@ -23,13 +23,21 @@
 
 	// 以下の $sql 変数に適切な SELECT 文を記述し、
 	// 一覧画面から画面遷移できるようにして下さい。
-	$sql = "select * from m_items where item_code = ? ";
-	$stmt = $mdb2->prepare( $sql );
-	$res = $stmt->execute(
-		array( $_REQUEST["code"] )
-	);
-
-	if( $item = $res->fetchRow( MDB2_FETCHMODE_ASSOC ) ) 
+	// $sql = "select * from m_items where item_code = ? ";
+	// $stmt = $mdb2->prepare( $sql );
+	// $res = $stmt->execute(
+	// 	array( $_REQUEST["code"] )
+	// );
+	$sql = "select * from m_items where item_code = :item_code ";
+  $statement = $pdo->prepare( $sql );
+  // echo($sql);
+  // print($_REQUEST["code"]);
+  $statement->bindValue(':item_code', $_REQUEST["code"]);
+  // $statement->bindValue(':item_code', 1001);
+	
+  $statement->execute();
+  while( $item = $statement->fetch( ) )
+	// if( $item = $res->fetchRow( MDB2_FETCHMODE_ASSOC ) ) 
 	{
 ?>
           <form name="detail_form" action="cart.php" method="get">
@@ -40,7 +48,7 @@
             <h2>商品詳細</h2>
             <div class="list clearfix">
               <h3><?php print( htmlspecialchars( $item["item_name"] ) ); ?></h3>
-              <p class="photo"><img src="img/<?php print( htmlspecialchars( $item["image"] ) ); ?>" width="400" height="400"/></p>
+              <p class="photo"><img src="common/img/<?php print( htmlspecialchars( $item["image"] ) ); ?>" width="400" height="400"/></p>
                 <p class="text"><?php print( htmlspecialchars( $item["detail"] ) ); ?></p>
               <div class="buy">
                 <p class="price">価格：<strong>&yen;<?php print( htmlspecialchars( $item["price"] ) ); ?></strong></p>
@@ -60,7 +68,8 @@
           <!-- /メイン部分 各ページごとに作成-->
 <?php
 	}
-	$res->free();
+	// $res->free();
+	$res = null;
 ?>
           <!-- ↓↓共通部分↓↓ -->
           <!-- フッター -->

@@ -3,6 +3,7 @@
 
 	// database.php の読み込み
 	require_once("include/database.php");
+	global $info;
 
 	/**-----------------------------------------------------------
 	 *
@@ -10,71 +11,104 @@
 	 * ログイン状態に応じて、UPDATE または INSERT を実行する。
 	 *
 	 ------------------------------------------------------------*/
-	if( $_REQUEST["cmd"] == "regist_member" )
+	if( isset($_REQUEST["cmd"]) && $_REQUEST["cmd"]) == "regist_member" )
 	{
-		if( $_SESSION["customer_code"] != "" )
+		if( $_SESSION['customer_code'] != "" )
 		{
-			$sql  = " UPDATE m_customers SET ";
-			$sql .= " customer_code = ?,";
-			$sql .= " pass = ?,";
-			$sql .= " name = ?,";
-			$sql .= " address = ?,";
-			$sql .= " tel = ?,";
-			$sql .= " mail = ?";
-			$sql .= " WHERE customer_code = ? ";
+			// $sql  = " UPDATE m_customers SET ";
+			// $sql .= " customer_code = ?,";
+			// $sql .= " pass = ?,";
+			// $sql .= " name = ?,";
+			// $sql .= " address = ?,";
+			// $sql .= " tel = ?,";
+			// $sql .= " mail = ?";
+			// $sql .= " WHERE customer_code = ? ";
 
-			$stmt = $mdb2->prepare( $sql );
-			$stmt->execute( 
-				array(
-					$_REQUEST["customer_code"],
-					$_REQUEST["pass"],
-					$_REQUEST["name"],
-					$_REQUEST["address"],
-					$_REQUEST["tel"],
-					$_REQUEST["mail"],
-					$_SESSION["customer_code"]
-				)
-			);
-			$is_success = 1;
+			// $stmt = $mdb2->prepare( $sql );
+			// $stmt->execute( 
+			// 	array(
+			// 		$_REQUEST['customer_code'],
+			// 		$_REQUEST['pass'],
+			// 		$_REQUEST['name'],
+			// 		$_REQUEST['address'],
+			// 		$_REQUEST['tel'],
+			// 		$_REQUEST['mail'],
+			// 		$_SESSION['customer_code']
+			// 	)
+			// );
+			$sql  = " UPDATE m_customers SET ";
+			$sql .= " customer_code = :customer_code,";
+			$sql .= " pass = :pass,";
+			$sql .= " name = :name,";
+			$sql .= " address = :address,";
+			$sql .= " tel = :tel,";
+			$sql .= " mail = :mail";
+			$sql .= " WHERE session_customer_code = :session_customer_code ";
+
+			$statement = $pdo->prepare( $sql );
+			$statement->bindValue(':customer_code', $_REQUEST["customer_code"]);
+			$statement->bindValue(':pass', $_REQUEST["pass"]);
+			$statement->bindValue(':name', $_REQUEST["name"]);
+			$statement->bindValue(':address', $_REQUEST["address"]);
+			$statement->bindValue(':tel', $_REQUEST["tel"]);
+			$statement->bindValue(':mail', $_REQUEST["mail"]);
+			$statement->bindValue(':session_customer_code', $_SESSION["customer_code"]);
+			$flag = $statement->execute();
 		}
 		else
 		{
+			// $sql = "INSERT INTO m_customers( customer_code, pass, name, address, tel, mail, del_flag, reg_date ) ";
+			// $sql .= "VALUES( ";
+			// $sql .= " ?, ";
+			// $sql .= " ?, ";
+			// $sql .= " ?, ";
+			// $sql .= " ?, ";
+			// $sql .= " ?, ";
+			// $sql .= " ?, ";
+			// $sql .= " '0', ";
+			// $sql .= " now() ) ";
+			// $stmt = $mdb2->prepare( $sql );
+			// $stmt->execute( 
+			// 	array(
+			// 		$_REQUEST['customer_code'],
+			// 		$_REQUEST['pass'],
+			// 		$_REQUEST['name'],
+			// 		$_REQUEST['address'],
+			// 		$_REQUEST['tel'],
+			// 		$_REQUEST['mail'],
+			// 	)
+			// );
 			$sql = "INSERT INTO m_customers( customer_code, pass, name, address, tel, mail, del_flag, reg_date ) ";
-			$sql .= "VALUES( ";
-			$sql .= " ?, ";
-			$sql .= " ?, ";
-			$sql .= " ?, ";
-			$sql .= " ?, ";
-			$sql .= " ?, ";
-			$sql .= " ?, ";
-			$sql .= " '0', ";
-			$sql .= " now() ) ";
-			$stmt = $mdb2->prepare( $sql );
-			$stmt->execute( 
-				array(
-					$_REQUEST["customer_code"],
-					$_REQUEST["pass"],
-					$_REQUEST["name"],
-					$_REQUEST["address"],
-					$_REQUEST["tel"],
-					$_REQUEST["mail"],
-				)
-			);
-			$is_success = 1;
+			$sql .= "VALUES( :customer_code, :pass, :name, :address, :tel, :mail, '0', now() )";
+			$statement = $pdo->prepare( $sql );
+			$statement->bindValue(':customer_code', $_REQUEST["customer_code"]);
+			$statement->bindValue(':pass', $_REQUEST["pass"]);
+			$statement->bindValue(':name', $_REQUEST["name"]);
+			$statement->bindValue(':address', $_REQUEST["address"]);
+			$statement->bindValue(':tel', $_REQUEST["tel"]);
+			$statement->bindValue(':mail', $_REQUEST["mail"]);
+			$flag = $statement->execute();
+
 		}
 	}
 
 	// ログイン済であれば、お客様の情報をデータベースより取得。
-	if( $_SESSION["customer_code"] != "" )
+	if( isset($_SESSION["customer_code"]) && $_SESSION["customer_code"]!="") )
 	{
 		$sql = " SELECT * FROM m_customers ";
-		$sql.= " WHERE customer_code= ? ";
+		// $sql.= " WHERE customer_code= ? ";
 
-		$stmt = $mdb2->prepare( $sql );
-		$res = $stmt->execute( array( $_SESSION["customer_code"] ) );
+		// $stmt = $mdb2->prepare( $sql );
+		// $res = $stmt->execute( array( $_SESSION["customer_code"] ) );
 
+		// $count = 0;
+		// $info = $res->fetchRow( MDB2_FETCHMODE_ASSOC );
+		$sql.= " WHERE customer_code= :customer_code ";
+		$statement = $pdo->prepare( $sql );
+		$statement->bindValue(':customer_code', $_SESSION["customer_code"]);
+		$res = $statement->execute();	
 		$count = 0;
-		$info = $res->fetchRow( MDB2_FETCHMODE_ASSOC );
+		$info = $res->fetch( );
 	}
 
 ?>
@@ -99,31 +133,22 @@
           <div id="mainbox" class="clearfix">
             <h2>登録情報</h2>
 
-<?php
-	if( $is_success == 1 )
-	{
-?>
-			<br><p align="center">正常に処理が完了しました。</p>
-<?php
-	}
-?>
-
             <form name="member_form" action="member.php" method="post">
             <input type="hidden" name="cmd" value="regist_member"/>
             <div class="info clearfix">
             <dl>
             <dt>ID：</dt>
-            <dd><input type="text" name="customer_code" <?php if( $info["customer_code"] != "" ){ print( "readonly" ); } ?> value="<?php print( htmlspecialchars( $info["customer_code"], ENT_QUOTES ) ); ?>"/></dd>
+            <dd><input type="text" name="customer_code" <?php if( $info["customer_code"] != "" ){ print( "readonly" ); } ?> value="<?php print( $info["customer_code"] ); ?>"/></dd>
             <dt>パスワード：</dt>
-            <dd><input type="password" name="pass" value="<?php print( htmlspecialchars( $info["pass"] , ENT_QUOTES) ); ?>"/></dd>
+            <dd><input type="password" name="pass" value="<?php print( $info["pass"] ); ?>"/></dd>
             <dt>氏名：</dt>
-            <dd><input type="text" name="name" value="<?php print( htmlspecialchars( $info["name"], ENT_QUOTES ) ); ?>"/></dd>
+            <dd><input type="text" name="name" value="<?php print( $info["name"] ); ?>"/></dd>
             <dt>住所：</dt>
-            <dd><input type="text" name="address" value="<?php print( htmlspecialchars( $info["address"], ENT_QUOTES ) ); ?>"/></dd>
+            <dd><input type="text" name="address" value="<?php print( $info["address"] ); ?>"/></dd>
             <dt>電話：</dt>
-            <dd><input type="text" name="tel" value="<?php print( htmlspecialchars( $info["tel"], ENT_QUOTES ) ); ?>"/></dd>
+            <dd><input type="text" name="tel" value="<?php print( $info["tel"] ); ?>"/></dd>
             <dt>アドレス：</dt>
-            <dd><input type="text" name="mail" value="<?php print( htmlspecialchars(  $info["mail"], ENT_QUOTES ) ); ?>" size="30"/>
+            <dd><input type="text" name="mail" value="<?php print( $info["mail"] ); ?>" size="30"/>
             </dd>
             </dl>
             <input type="submit" class="update" value="登録"/>

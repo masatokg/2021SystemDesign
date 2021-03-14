@@ -2,63 +2,90 @@
 	require_once("include/database.php");
 	session_start( );
 
+	$is_order_done = 0;
 	/**
 	 * d_purchase テーブルに挿入する関数
 	 */
-	function create_purchase( $mdb2, $customer_code, $total_price )
+	// function create_purchase( $mdb2, $customer_code, $total_price )
+	function create_purchase( $pdo, $customer_code, $total_price )
 	{
 		// d_purchase テーブルへの挿入
 		$sql = " insert into d_purchase( customer_code, purchase_date, total_price) ";
-		$sql.= " values( ?, now(), ? ) ";
-		$stmt = $mdb2->prepare( $sql );
-		// エラー処理
-		if ( PEAR::isError( $stmt ) )
-		{
-			$mdb2->rollback();
+		// $sql.= " values( ?, now(), ? ) ";
+		// $stmt = $mdb2->prepare( $sql );
+		$sql.= " values( :ccd, now(), :total_price ) ";
+		$statement = $pdo->prepare( $sql );
+		$statement->bindValue(':ccd', $customer_code);
+		$statement->bindValue(':total_price', $total_price);
+
+		$flag = $statement->execute();
+
+		if (!$flag){
 			die("エラーが発生しました。管理者までお問い合わせ下さい。");
 		}
-		$res = $stmt->execute(
-			array(
-				$customer_code,
-				$total_price
-			)
-		);
-		// エラー処理
-		if ( PEAR::isError( $res ) )
-		{
-			$mdb2->rollback();
-			die("エラーが発生しました。管理者までお問い合わせ下さい。");
-		}
+
+		// // エラー処理
+		// if ( PEAR::isError( $stmt ) )
+		// {
+		// 	$mdb2->rollback();
+		// 	die("エラーが発生しました。管理者までお問い合わせ下さい。");
+		// }
+		// $res = $stmt->execute(
+		// 	array(
+		// 		$customer_code,
+		// 		$total_price
+		// 	)
+		// );
+		// // エラー処理
+		// if ( PEAR::isError( $res ) )
+		// {
+		// 	$mdb2->rollback();
+		// 	die("エラーが発生しました。管理者までお問い合わせ下さい。");
+		// }
 	}
 
 	/**
 	 * d_purchase_detail テーブルに挿入する関数
 	 */
-	function create_purchase_detail( $mdb2, $order_id, $item_code, $price, $num )
+	// function create_purchase_detail( $mdb2, $order_id, $item_code, $price, $num )
+	function create_purchase_detail( $pdo, $order_id, $item_code, $price, $num )
 	{
 		$sql = " insert into d_purchase_detail( order_id, item_code, price, num ) ";
-		$sql.= " values( ?, ?, ?, ? ) " ;
-		$stmt = $mdb2->prepare( $sql );
-		// エラー処理
-		if ( PEAR::isError( $stmt ) )
-		{
-			$mdb2->rollback();
+		// $sql.= " values( ?, ?, ?, ? ) " ;
+		// $stmt = $mdb2->prepare( $sql );
+		$sql.= " values( :order_id, :item_code, :price, :num ) " ;
+		$statement = $pdo->prepare( $sql );
+		$statement->bindValue(':order_id', $order_id);
+		$statement->bindValue(':item_code', $item_code);
+		$statement->bindValue(':price', $price);
+		$statement->bindValue(':num', $num);
+
+		$flag = $statement->execute();
+
+		if (!$flag){
 			die("エラーが発生しました。管理者までお問い合わせ下さい。");
 		}
-		$res = $stmt->execute(
-			array(
-				$order_id,
-				$item_code,
-				$price,
-				$num
-			)
-		);
-		// エラー処理
-		if ( PEAR::isError( $res ) )
-		{
-			$mdb2->rollback();
-			die("エラーが発生しました。管理者までお問い合わせ下さい。");
-		}
+
+	// 			// エラー処理
+	// 	if ( PEAR::isError( $stmt ) )
+	// 	{
+	// 		$mdb2->rollback();
+	// 		die("エラーが発生しました。管理者までお問い合わせ下さい。");
+	// 	}
+	// 	$res = $stmt->execute(
+	// 		array(
+	// 			$order_id,
+	// 			$item_code,
+	// 			$price,
+	// 			$num
+	// 		)
+	// 	);
+	// 	// エラー処理
+	// 	if ( PEAR::isError( $res ) )
+	// 	{
+	// 		$mdb2->rollback();
+	// 		die("エラーが発生しました。管理者までお問い合わせ下さい。");
+	// 	}
 	}
 
 	//isset 命令はある変数が存在するかどうかを判定するために用いる。
@@ -75,7 +102,7 @@
 	 * 詳細画面で「カートにいれる」ボタンが押された時に処理を行う。
 	 *
 	 ------------------------------------------------------------*/
-	if( $_REQUEST["cmd"] == "add_cart")
+	if( isset($_REQUEST["cmd"]) && $_REQUEST["cmd"] == "add_cart")
 	{
 		$is_already_exists  = 0;
 		for( $i = 0 ; $i < count( $_SESSION["cart"] ); $i++ )
@@ -90,21 +117,43 @@
 		// 追加する商品がカートに存在しない場合、カートに新規登録。
 		if( $is_already_exists == 0 )
 		{
-			$sql = "select * from m_items where item_code = ? ";
-			$stmt = $mdb2->prepare( $sql );
-			$res = $stmt->execute(
-				array( $_REQUEST["code"] )
-			);
-			if( $record = $res->fetchRow( MDB2_FETCHMODE_ASSOC ) ) 
+			// $sql = "select * from m_items where item_code = ? ";
+			// $stmt = $mdb2->prepare( $sql );
+			// $res = $stmt->execute(
+			// 	array( $_REQUEST["code"] )
+			// );
+			// if( $record = $res->fetchRow( MDB2_FETCHMODE_ASSOC ) ) 
+			// {
+			// 	$item["item_code"] = $_REQUEST["code"];
+			// 	$item["num"] = $_REQUEST["num"];
+			// 	$item["image"] = $record["image"];
+			// 	$item["item_name"] = $record["item_name"];
+			// 	$item["price"] = $record["price"];
+			// 	array_push( $_SESSION["cart"], $item );
+			// }
+			// $res->free();
+
+			$sql = "select * from m_items where item_code = :item_code ";
+			$statement = $pdo->prepare( $sql );
+			$statement->bindValue(':item_code', $_REQUEST["code"]);
+	
+			$res = $statement->execute();
+			
+			if( $res ) 
 			{
+				$record = $statement->fetch( );
 				$item["item_code"] = $_REQUEST["code"];
 				$item["num"] = $_REQUEST["num"];
 				$item["image"] = $record["image"];
 				$item["item_name"] = $record["item_name"];
 				$item["price"] = $record["price"];
 				array_push( $_SESSION["cart"], $item );
+				print("カート追加成功");
 			}
-			$res->free();
+			// print("カートの商品数".count( $_SESSION["cart"]));
+			// $res->free();
+			$res = null;
+
 		}
 	}
 
@@ -114,7 +163,7 @@
 	 * カート画面で「削除」ボタンが押された時に処理を行う。
 	 *
 	 ------------------------------------------------------------*/
-	if( $_REQUEST["cmd"] == "del")
+	if( isset($_REQUEST["cmd"]) && $_REQUEST["cmd"] == "del")
 	{
 		for( $i = 0 ; $i < count( $_SESSION["cart"] ); $i++ )
 		{
@@ -135,28 +184,33 @@
 	 * 注文確定ボタンはログイン済の時のみ、表示される。
 	 *
 	 ------------------------------------------------------------*/
-	if( $_REQUEST["cmd"] == "commit_order" )
+	if( isset($_REQUEST["cmd"]) && $_REQUEST["cmd"] == "commit_order" && isset($_SESSION["customer_code"]))
 	{
 		// トランザクション開始
-		$mdb2->beginTransaction();
+		// $mdb2->beginTransaction();
+		$pdo->beginTransaction();
 
+		$total_price=0;
 		// カート内の合計金額を計算する。
 		foreach( $_SESSION["cart"] as $cart )
 		{
 			$total_price += $cart["price"] * $cart["num"];
 		}
 		// d_purchase テーブルへの挿入
-		create_purchase( $mdb2, $_SESSION["customer_code"], $total_price );
+		// create_purchase( $mdb2, $_SESSION["customer_code"], $total_price );
+		create_purchase( $pdo, $_SESSION["customer_code"], $total_price );
 
 		// d_purchase テーブルに挿入した ID を取得。
-		$order_id = $mdb2->lastinsertid("d_purchase","order_id");
+		// $order_id = $mdb2->lastinsertid("d_purchase","order_id");
+		$order_id = $pdo->lastinsertid("order_id");
 
 		// $_SESSION["cart"] をもう一度ループし、ループ内で詳細情報を取得して
 		// から d_purchse_detail に insert する。
 		foreach( $_SESSION["cart"] as $cart )
 		{
 			create_purchase_detail( 
-				$mdb2, $order_id, $cart["item_code"], $cart["price"], $cart["num"] );
+				// $mdb2, $order_id, $cart["item_code"], $cart["price"], $cart["num"] );
+				$pdo, $order_id, $cart["item_code"], $cart["price"], $cart["num"] );
 		}
 		unset( $_SESSION["cart"] );
 		// $is_order_done 変数は、画面上に「注文が完了しました」
@@ -164,7 +218,8 @@
 		$is_order_done = 1;
 
 		// トランザクションのコミット
-		$mdb2->commit();
+		// $mdb2->commit();
+		$pdo->commit();
 	}
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -206,8 +261,9 @@
 		foreach( $_SESSION["cart"] as $cart )
 		{
 ?>
+<h1>カートの回転</h1>
                 <tr>
-                  <td class="tc1"><img src="img/thumb2/<?php print( $cart["image"] ); ?>"></td>
+                  <td class="tc1"><img src="common/img/thumb2/<?php print( $cart["image"] ); ?>"></td>
                   <td class="tc2"><?php print( $cart["item_name"] ); ?>(<?php print( $cart["num"] ); ?>個)</td>
                   <td class="tc3">&yen;<?php print( $cart["price"] ); ?></td>
                   <td class="tc4"><a href="item_detail.php?code=<?php print( $cart["item_code"] ); ?>">詳細へ</a></td>
@@ -220,13 +276,17 @@
               </table>
               <br>
 <?php
-	if( $_SESSION["customer_code"] != "" && count( $_SESSION["cart"] ) > 0 )
+	if( isset($_SESSION["customer_code"]) && isset($_SESSION["cart"]) && count( $_SESSION["cart"] ) > 0 )
 	{
 ?>
               <form name="cart_form" action="cart.php" method="post">
               <input type="hidden" name="cmd" value="commit_order"/>
               <input type="submit" class="fix" value="注文確定"/>
               </form>
+<?php
+	}else{
+?>
+		<h1><B>ログインしないと注文はできません。</B></h1>
 <?php
 	}
 ?>

@@ -5,7 +5,7 @@
 
 <?php
 	// ログインしていない時は、以下の if 文に入ります。
-	if( $_SESSION["customer_code"] == "" )
+	if( !isset($_SESSION["customer_code"]) || $_SESSION["customer_code"] == "" )
 	{
 ?>
         <!-- ログインフォーム（非ログイン時） -->
@@ -16,10 +16,10 @@
           <dl class="clearfix">
 <?php
 		// ログインに失敗した時のエラー表示。
-		if( $is_login == 0 and $_REQUEST["cmd"] == "do_login" )
-		{
-			print("ログインに失敗しました。");
-		}
+    if( (isset($is_login) && $is_login != 1) and (isset($_REQUEST["cmd"]) && $_REQUEST["cmd"] == "do_login") )
+    {
+      print("ログインに失敗しました。");
+    }
 ?>
             <dt><img src="common/img/t4.gif" alt="ID" /></dt>
             <dd>
@@ -63,17 +63,17 @@
           <dl class="clearfix">
             <dt><img src="common/img/t6.gif" alt="商品名" width="32" height="18" /></dt>
             <dd>
-              <input type="text" name="item_name" class="text" value="<?php print( $_REQUEST["item_name"] );?>"/>
+              <input type="text" name="item_name" class="text" value="<?php if(isset($_REQUEST["item_name"])){ print( $_REQUEST["item_name"] );} ?>"/>
             </dd>
           </dl>
           <dl class="clearfix cat">
             <dt><img src="common/img/t7.gif" alt="カテゴリ" /></dt>
             <dd>
-              <input type="checkbox" name="cat_kan" value="1" <?php if( $_REQUEST["cat_kan"] == "1" ){ print( "checked" ); } ?>/>
+              <input type="checkbox" name="cat_kan" value="1" <?php if( isset($_REQUEST["cat_kan"]) && $_REQUEST["cat_kan"] == "1" ){ print( "checked" ); } ?>/>
               管楽器<br />
-              <input type="checkbox" name="cat_gen" value="1" <?php if( $_REQUEST["cat_gen"] == "1" ){ print( "checked" ); } ?>/>
+              <input type="checkbox" name="cat_gen" value="1" <?php if( isset($_REQUEST["cat_gen"]) && $_REQUEST["cat_gen"]  == "1" ){ print( "checked" ); } ?>/>
               弦楽器<br />
-              <input type="checkbox" name="cat_da" value="1" <?php if( $_REQUEST["cat_da"] == "1" ){ print( "checked" ); } ?>/>
+              <input type="checkbox" name="cat_da" value="1" <?php if( isset($_REQUEST["cat_da"]) && $_REQUEST["cat_da"]  == "1" ){ print( "checked" ); } ?>/>
               打楽器 </dd>
           </dl>
           <div class="bottom">
@@ -89,7 +89,7 @@
           <li><a href="cart.php"><img src="common/img/bt2.gif" alt="カートの中" name="Image2" width="172" height="38" id="Image2" onmouseover="MM_swapImage('Image2','','common/img/bt2_f2.gif',1)" onmouseout="MM_swapImgRestore()" /></a></li>
 <?php
 	// ログイン未の場合
-	if( $_SESSION["customer_code"] == "")
+	if( isset($_SESSION["customer_code"]) && $_SESSION["customer_code"] == "")
 	{
 ?>
           <li><a href="member.php"><img src="common/img/bt3_2.gif" alt="会員登録" name="Image4" width="172" height="38" id="Image4" onmouseover="MM_swapImage('Image4','','common/img/bt3_2_f2.gif',1)" onmouseout="MM_swapImgRestore()" /></a></li>
